@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lumina OS</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <div id="app" class="app empty" data-view="photobase">
+    <main class="canvas-zone" id="canvasZone" aria-label="Volumetric canvas">
+      <canvas id="sceneCanvas"></canvas>
+      <canvas id="overlayCanvas"></canvas>
+      <div class="depth-veil" id="depthVeil" aria-hidden="true"></div>
+      <div class="light-vectors" id="lightVectors" aria-hidden="true"></div>
+
+      <section class="empty-state" id="emptyState">
+        <img class="empty-mark" src="icon.svg" alt="" />
+        <h1 class="brand-hero">Lumina</h1>
+        <p class="brand-line">Reconstruct the scene. Edit light, material, and photon scatter — not layers.</p>
+        <div class="empty-actions">
+          <button type="button" class="cta" id="btnOpen">Open image / RAW</button>
+          <button type="button" class="cta ghost" id="btnDemo">Load demo landscape</button>
+          <button type="button" class="cta ghost" id="btnProjectsEmpty">Projects</button>
+        </div>
+        <p class="empty-hint">Drop a photo anywhere · Hold <kbd>Alt</kbd> Scenescape · <kbd>⌘/Ctrl</kbd>+<kbd>L</kbd> Intent · Voice mic</p>
+      </section>
+    </main>
+
+    <div class="material-hud" id="materialHud" hidden>
+      <div class="hud-glow" aria-hidden="true"></div>
+      <header class="hud-head">
+        <span class="hud-context" id="hudContext">Atmospheric</span>
+        <span class="hud-entity" id="hudEntity">Sky</span>
+      </header>
+      <div class="hud-controls" id="hudControls"></div>
+    </div>
+
+    <aside class="thought-graph" id="thoughtGraph" aria-label="Thought graph" data-open="false">
+      <header class="graph-head">
+        <div>
+          <strong>Thought Graph</strong>
+          <span>Live procedural DAG</span>
+        </div>
+        <button type="button" class="icon-btn" id="btnCloseGraph" aria-label="Close thought graph">×</button>
+      </header>
+      <div class="graph-canvas-wrap">
+        <svg class="graph-edges" id="graphEdges" aria-hidden="true"></svg>
+        <div class="graph-nodes" id="graphNodes"></div>
+      </div>
+      <footer class="graph-foot">
+        <label class="blend-mask-label">Blend mask
+          <select id="blendMaskMode">
+            <option value="sky-sunset">Sky←Sunset · FG←Day</option>
+            <option value="painted">Use painted mask</option>
+            <option value="invert">Sky←Day · FG←Sunset</option>
+          </select>
+        </label>
+        <button type="button" class="text-btn" id="btnBlendBranches">Blend selected branches</button>
+      </footer>
+    </aside>
+
+    <aside class="projects-panel" id="projectsPanel" data-open="false" hidden>
+      <header class="graph-head">
+        <div><strong>Projects</strong><span>Local sessions</span></div>
+        <button type="button" class="icon-btn" id="btnCloseProjects" aria-label="Close">×</button>
+      </header>
+      <div class="projects-list" id="projectsList"></div>
+    </aside>
+
+    <div class="intent-dock" id="intentDock">
+      <div class="intent-sliders" id="intentSliders" hidden></div>
+      <form class="intent-bar" id="intentForm" autocomplete="off">
+        <span class="intent-mark" aria-hidden="true">⌘L</span>
+        <input
+          type="text"
+          id="intentInput"
+          name="intent"
+          placeholder="Intent or “select sky” — e.g. Reconstruct sky detail from scattering"
+          aria-label="Intent input"
+        />
+        <button type="button" class="intent-mic" id="btnVoice" title="Voice intent" aria-label="Voice intent">mic</button>
+        <button type="submit" class="intent-go" aria-label="Run intent">→</button>
+      </form>
+    </div>
+
+    <header class="ghost-chrome" id="ghostChrome">
+      <div class="chrome-brand">
+        <img src="icon.svg" alt="" />
+        <span>Lumina</span>
+      </div>
+      <div class="chrome-status" id="viewBadge">Photobase</div>
+      <div class="chrome-meta" id="chromeMeta"></div>
+      <div class="chrome-actions">
+        <button type="button" class="chrome-btn" id="btnToggleGraph" title="Thought Graph (G)">Graph</button>
+        <button type="button" class="chrome-btn" id="btnCompare" title="A/B compare (C)">A/B</button>
+        <button type="button" class="chrome-btn" id="btnPaint" title="Paint blend mask (M)">Mask</button>
+        <button type="button" class="chrome-btn" id="btnUndo" title="Undo (Z)">Undo</button>
+        <button type="button" class="chrome-btn" id="btnSave" title="Save project">Save</button>
+        <button type="button" class="chrome-btn" id="btnProjects" title="Projects">Projects</button>
+        <button type="button" class="chrome-btn" id="btnExport" title="Export PNG + sidecar">Export</button>
+        <button type="button" class="chrome-btn" id="btnReset" title="New session">Reset</button>
+      </div>
+    </header>
+
+    <div class="toast" id="toast" hidden role="status"></div>
+    <input id="fileInput" class="sr-only" type="file" accept="image/*,.dng,.nef,.cr2,.cr3,.arw,.raf,.orf,.rw2" />
+  </div>
+
+  <script src="assets/reconstruct.js"></script>
+  <script src="assets/segment.js"></script>
+  <script src="assets/engine.js"></script>
+  <script src="assets/demo.js"></script>
+  <script src="assets/graph.js"></script>
+  <script src="assets/hud.js"></script>
+  <script src="assets/intent.js"></script>
+  <script src="assets/voice.js"></script>
+  <script src="assets/persist.js"></script>
+  <script src="assets/app.js"></script>
+</body>
+</html>
