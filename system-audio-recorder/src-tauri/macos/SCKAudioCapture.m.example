@@ -1,0 +1,18 @@
+//! macOS ScreenCaptureKit Objective-C bridge (optional helper).
+//!
+//! Linked only on macOS release builds. See README for signing & Screen Recording
+//! permission steps. This file documents the expected C ABI used by
+//! `audio/coreaudio.rs`.
+
+/*
+#import <ScreenCaptureKit/ScreenCaptureKit.h>
+#import <CoreMedia/CoreMedia.h>
+
+typedef void (*LuminaAudioCallback)(const float *interleaved,
+                                    uint32_t frames,
+                                    uint32_t channels,
+                                    uint32_t sample_rate,
+                                    void *userdata);
+
+// lumina_sck_start / lumina_sck_stop exported for Rust FFI.
+*/

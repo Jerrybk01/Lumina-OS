@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+dist/
+src-tauri/target/
+.cargo-cache/
+
+# Logs / OS
+*.log
+.DS_Store
+Thumbs.db
+
+# Editor
+.idea/
+.vscode/
+*.swp
+
+# Env (never commit secrets)
+.env
+.env.*
+
+# Tauri generated
+src-tauri/gen/
