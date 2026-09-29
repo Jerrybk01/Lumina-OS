@@ -34,5 +34,5 @@ pub fn run() {
             commands::default_output_dir,
         ])
         .run(tauri::generate_context!())
-        .expect("error while running Lumina Capture");
+        .expect("error while running Buka Quality Sound");
 }

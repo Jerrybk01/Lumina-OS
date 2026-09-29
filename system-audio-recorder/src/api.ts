@@ -90,7 +90,7 @@ let demoPhase = 0;
 let demoSettings: RecordSettings = {
   sample_rate: "hz48000",
   format: "wav",
-  output_dir: "/home/user/Music/Lumina Capture",
+  output_dir: "/home/user/Music/Buka Quality Sound",
   device_id: "demo",
   app_source_id: "system",
   noise_reduction: false,
@@ -176,7 +176,7 @@ function demoStats(): SessionStats {
     file_path:
       demoState === "idle" && demoBytes === 0
         ? null
-        : `${demoSettings.output_dir}/lumina-capture-demo.wav`,
+        : `${demoSettings.output_dir}/buka-quality-sound-demo.wav`,
     segment_index: 0,
     sample_rate: demoSettings.sample_rate === "hz44100" ? 44100 : 48000,
     format: demoSettings.format,

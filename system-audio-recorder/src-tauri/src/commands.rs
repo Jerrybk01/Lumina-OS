@@ -78,7 +78,7 @@ pub fn default_output_dir() -> String {
 fn dirs_next_home() -> String {
     if let Some(mut d) = home_dir() {
         d.push("Music");
-        d.push("Lumina Capture");
+        d.push("Buka Quality Sound");
         let _ = std::fs::create_dir_all(&d);
         return d.display().to_string();
     }

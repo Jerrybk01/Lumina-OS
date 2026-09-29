@@ -9,7 +9,7 @@ app.innerHTML = `
       <div class="brand">
         <div class="logo" aria-hidden="true"></div>
         <div>
-          <h1>Lumina Capture</h1>
+          <h1>Buka Quality Sound</h1>
           <p>System / loopback audio recorder</p>
         </div>
       </div>
@@ -161,7 +161,7 @@ function showError(msg: string) {
 
 function applyTheme(theme: "dark" | "light") {
   document.documentElement.setAttribute("data-theme", theme);
-  localStorage.setItem("lumina-theme", theme);
+  localStorage.setItem("buka-theme", theme);
   els.themeBtn.textContent = theme === "dark" ? "Light" : "Dark";
 }
 
@@ -331,7 +331,7 @@ async function stopRecording() {
 }
 
 async function init() {
-  const saved = localStorage.getItem("lumina-theme");
+  const saved = localStorage.getItem("buka-theme");
   applyTheme(saved === "light" ? "light" : "dark");
 
   const [caps, devices, apps, defaults, outDir] = await Promise.all([

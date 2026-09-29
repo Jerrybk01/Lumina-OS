@@ -1,4 +1,4 @@
-# Lumina Capture — System Audio Recorder
+# Buka Quality Sound — System Audio Recorder
 
 Professional desktop app for capturing **system / loopback audio only** (what your computer is playing — not the microphone). Built for musicians, streamers, and content creators.
 
@@ -39,7 +39,7 @@ Capture never blocks the UI. A bounded channel keeps latency low; metering and e
 - There is no WASAPI/CoreAudio-style first-class loopback API.
 - We open a **sink monitor** (what is playing on that sink), not a mic source.
 - Listing individual apps is best-effort; clean per-app capture usually needs manual PipeWire routing.
-- Enable the optional Cargo feature `linux-pulse` and install `libpulse` headers for real monitor capture. Without it, a silent/demo tone path is used so the UI pipeline still runs in CI.
+- Enable the optional Cargo feature `linux-pulse` and install `libpulse` development headers for real monitor capture. Without it, a silent/demo tone path is used so the UI pipeline still runs in CI.
 
 ---
 
@@ -62,31 +62,21 @@ Capture never blocks the UI. A bounded channel keeps latency low; metering and e
 ## Project layout
 
 ```
-system-audio-recorder/
+system-audio-recorder/          # app root (package: buka-quality-sound)
 ├── README.md
-├── package.json              # Vite + Tauri frontend tooling
-├── src/                      # UI (TypeScript)
-│   ├── main.ts               # Transport, waveform, meters, hotkeys, themes
-│   ├── api.ts                # Tauri IPC + browser demo fallback
+├── package.json
+├── scripts/                    # portable build helpers
+├── src/                        # UI (TypeScript)
+│   ├── main.ts
+│   ├── api.ts
 │   └── styles.css
-└── src-tauri/                # Rust backend
+└── src-tauri/                  # Rust backend (crate: buka-quality-sound)
     ├── Cargo.toml
-    ├── tauri.conf.json
-    ├── capabilities/
+    ├── tauri.conf.json         # productName: Buka Quality Sound
     └── src/
-        ├── audio/            # AudioEngine + platform backends + DSP
-        │   ├── engine.rs
-        │   ├── wasapi.rs     # Windows
-        │   ├── coreaudio.rs  # macOS
-        │   ├── linux.rs      # Pulse/PipeWire monitor
-        │   ├── meter.rs
-        │   ├── noise_reduce.rs
-        │   └── silence_split.rs
-        ├── writer/           # FileWriter (WAV / MP3)
-        │   ├── wav.rs
-        │   └── mp3.rs
-        ├── commands.rs       # Tauri command surface
-        └── lib.rs
+        ├── audio/              # AudioEngine + platform backends + DSP
+        ├── writer/             # FileWriter (WAV / MP3)
+        └── commands.rs
 ```
 
 **Modules**
@@ -125,34 +115,32 @@ Frontend-only UI demo (no native loopback — useful for layout work):
 npm run dev
 ```
 
-### Production build
+### Production / portable package
 
 ```bash
-npm run tauri:build
+npm run tauri:build          # full native installers when toolchain allows
+./scripts/make-portable.sh   # source + scripts portable zip (cross-platform)
 ```
-
-Artifacts land under `src-tauri/target/release/bundle/`.
 
 ### Linux with real Pulse monitor capture
 
 ```bash
 cd src-tauri
 cargo build --features linux-pulse
-# or set in Cargo.toml default features, then:
 npm run tauri:dev
 ```
 
 ### Testing capture on Windows
 
 1. Play music or a browser tab.
-2. Launch Lumina Capture; confirm the default **render** device (speakers/headphones).
+2. Launch **Buka Quality Sound**; confirm the default **render** device (speakers/headphones).
 3. Choose save folder → Record. Confirm meters move **without** speaking into a mic.
 4. For per-app: pick a process source (Win10 2004+). If unavailable, “All system audio” still works.
 5. Export WAV @ 48 kHz and MP3 @ 44.1 kHz; verify in a DAW.
 
 ### Testing capture on macOS
 
-1. System Settings → Privacy & Security → **Screen Recording** → enable Lumina Capture.
+1. System Settings → Privacy & Security → **Screen Recording** → enable **Buka Quality Sound**.
 2. Play system audio; Record. Meters should reflect playback, not the mic.
 3. Use per-app filter when SCK lists applications.
 4. If permission is denied, the UI shows a clear error — re-enable and restart the app.
@@ -171,4 +159,4 @@ No accounts, no network calls, no telemetry. Files are written only to the folde
 
 ## License
 
-MIT — see repository root if present; otherwise treat this app folder as MIT for Lumina Capture sources.
+MIT — treat this app folder as MIT for Buka Quality Sound sources.

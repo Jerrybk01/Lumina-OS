@@ -1,6 +1,7 @@
 # Dependencies
 node_modules/
 dist/
+dist-portable/
 src-tauri/target/
 .cargo-cache/
 

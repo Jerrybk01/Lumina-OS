@@ -73,10 +73,10 @@ fn make_path(cfg: &WriterConfig, segment: u32) -> PathBuf {
         ExportFormat::Mp3 => "mp3",
     };
     let name = if segment == 0 {
-        format!("lumina-capture-{stamp}-{}.{}", cfg.sample_rate, ext)
+        format!("buka-quality-sound-{stamp}-{}.{}", cfg.sample_rate, ext)
     } else {
         format!(
-            "lumina-capture-{stamp}-{}-seg{:03}.{}",
+            "buka-quality-sound-{stamp}-{}-seg{:03}.{}",
             cfg.sample_rate, segment, ext
         )
     };

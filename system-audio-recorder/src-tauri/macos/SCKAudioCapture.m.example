@@ -8,11 +8,11 @@
 #import <ScreenCaptureKit/ScreenCaptureKit.h>
 #import <CoreMedia/CoreMedia.h>
 
-typedef void (*LuminaAudioCallback)(const float *interleaved,
+typedef void (*BukaAudioCallback)(const float *interleaved,
                                     uint32_t frames,
                                     uint32_t channels,
                                     uint32_t sample_rate,
                                     void *userdata);
 
-// lumina_sck_start / lumina_sck_stop exported for Rust FFI.
+// buka_sck_start / buka_sck_stop exported for Rust FFI.
 */

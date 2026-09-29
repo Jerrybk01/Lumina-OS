@@ -1,13 +1,13 @@
 [package]
-name = "system-audio-recorder"
+name = "buka-quality-sound"
 version = "1.0.0"
 description = "Professional system/loopback audio recorder (WASAPI + CoreAudio)"
-authors = ["Lumina Capture"]
+authors = ["Buka Quality Sound"]
 edition = "2021"
 rust-version = "1.77"
 
 [lib]
-name = "system_audio_recorder_lib"
+name = "buka_quality_sound_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

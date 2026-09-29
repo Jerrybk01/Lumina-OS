@@ -215,6 +215,42 @@ dependencies = [
 ]
 
 [[package]]
+name = "buka-quality-sound"
+version = "1.0.0"
+dependencies = [
+ "anyhow",
+ "base64 0.22.1",
+ "block2 0.5.1",
+ "chrono",
+ "core-foundation",
+ "core-foundation-sys",
+ "coreaudio-sys",
+ "crossbeam-channel",
+ "dispatch",
+ "hound",
+ "libpulse-binding",
+ "libpulse-simple-binding",
+ "mp3lame-encoder",
+ "objc2 0.5.2",
+ "objc2-foundation 0.2.2",
+ "once_cell",
+ "parking_lot",
+ "rubato",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-dialog",
+ "tauri-plugin-global-shortcut",
+ "thiserror 2.0.21",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
+ "widestring",
+ "windows 0.58.0",
+]
+
+[[package]]
 name = "bumpalo"
 version = "3.20.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3383,42 +3419,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 3.0.6",
-]
-
-[[package]]
-name = "system-audio-recorder"
-version = "1.0.0"
-dependencies = [
- "anyhow",
- "base64 0.22.1",
- "block2 0.5.1",
- "chrono",
- "core-foundation",
- "core-foundation-sys",
- "coreaudio-sys",
- "crossbeam-channel",
- "dispatch",
- "hound",
- "libpulse-binding",
- "libpulse-simple-binding",
- "mp3lame-encoder",
- "objc2 0.5.2",
- "objc2-foundation 0.2.2",
- "once_cell",
- "parking_lot",
- "rubato",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-dialog",
- "tauri-plugin-global-shortcut",
- "thiserror 2.0.21",
- "tracing",
- "tracing-subscriber",
- "uuid",
- "widestring",
- "windows 0.58.0",
 ]
 
 [[package]]

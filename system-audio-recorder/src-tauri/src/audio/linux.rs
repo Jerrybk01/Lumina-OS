@@ -146,7 +146,7 @@ mod pulse_impl {
 
         let simple = Simple::new(
             None,
-            "Lumina Capture",
+            "Buka Quality Sound",
             Direction::Record,
             Some(source),
             "System audio loopback",
