@@ -10,7 +10,6 @@
 
 #![cfg(windows)]
 
-use std::mem::MaybeUninit;
 use std::ptr;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -19,18 +18,21 @@ use std::time::Duration;
 
 use crossbeam_channel::Sender;
 use tracing::{error, info, warn};
-use windows::core::{Interface, GUID, HRESULT, PCWSTR};
+use windows::core::{GUID, HRESULT, PCWSTR};
 use windows::Win32::Media::Audio::*;
 use windows::Win32::System::Com::*;
-use windows::Win32::Foundation::{CloseHandle, BOOL, HANDLE, WAIT_OBJECT_0};
-use windows::Win32::System::Threading::{
-    CreateEventW, SetEvent, WaitForSingleObject, INFINITE,
-};
+use windows::Win32::Foundation::{CloseHandle, BOOL, WAIT_OBJECT_0};
+use windows::Win32::System::Threading::{CreateEventW, WaitForSingleObject};
 
 use super::types::{AppAudioSource, AudioChunk, AudioDeviceInfo, CaptureCapabilities};
 
 const REFTIMES_PER_SEC: i64 = 10_000_000;
-const REFTIMES_PER_MILLISEC: i64 = 10_000;
+
+// mmreg / windows 0.58: WAVE_FORMAT_IEEE_FLOAT lives under Multimedia and
+// WAVE_FORMAT_EXTENSIBLE under KernelStreaming — use the numeric values so we
+// do not pull extra crate features for two constants.
+const WAVE_FORMAT_IEEE_FLOAT: u16 = 0x0003;
+const WAVE_FORMAT_EXTENSIBLE: u16 = 0xFFFE;
 
 pub fn capabilities() -> CaptureCapabilities {
     CaptureCapabilities {
@@ -247,8 +249,12 @@ fn capture_loop(
             }
 
             loop {
-                let mut packet_len = 0u32;
-                if capture.GetNextPacketSize(&mut packet_len).is_err() || packet_len == 0 {
+                // windows 0.58: GetNextPacketSize() -> Result<u32> (no out-param)
+                let packet_len = match capture.GetNextPacketSize() {
+                    Ok(n) => n,
+                    Err(_) => break,
+                };
+                if packet_len == 0 {
                     break;
                 }
 
@@ -303,8 +309,8 @@ unsafe fn convert_to_f32(
     let mut out = vec![0.0f32; n];
 
     // IEEE float mix format is the common shared-mode case.
-    if format.wFormatTag == WAVE_FORMAT_IEEE_FLOAT.0 as u16
-        || (format.wFormatTag == WAVE_FORMAT_EXTENSIBLE.0 as u16 && format.wBitsPerSample == 32)
+    if format.wFormatTag == WAVE_FORMAT_IEEE_FLOAT
+        || (format.wFormatTag == WAVE_FORMAT_EXTENSIBLE && format.wBitsPerSample == 32)
     {
         let src = std::slice::from_raw_parts(data as *const f32, n);
         out.copy_from_slice(src);
@@ -327,15 +333,12 @@ unsafe fn convert_to_f32(
 
 unsafe fn device_friendly_name(device: &IMMDevice) -> Option<String> {
     let store = device.OpenPropertyStore(STGM_READ).ok()?;
-    // PKEY_Device_FriendlyName
+    // PKEY_Device_FriendlyName — stub until PROPVARIANT string decode is wired.
     let key = windows::Win32::UI::Shell::PropertiesSystem::PROPERTYKEY {
         fmtid: GUID::from_u128(0xa45c254e_df1c_4efd_8020_67d146a850e0),
         pid: 14,
     };
-    let mut var = MaybeUninit::uninit();
-    // Use propvariant read via GetValue if available through windows crate helpers.
-    // Simplified: return None and let caller use a generic name on failure.
-    let _ = (store, key, var);
+    let _ = (store, key);
     None
 }
 
