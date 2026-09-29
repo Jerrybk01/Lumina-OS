@@ -1,6 +1,12 @@
 import "./styles.css";
 import { api, type LiveSnapshot, type RecordSettings, type SessionStats } from "./api";
 
+const SUN_SVG = `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>`;
+const MOON_SVG = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 14.5A8.5 8.5 0 0 1 9.5 3 7 7 0 1 0 21 14.5z"/></svg>`;
+const PAUSE_SVG = `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>`;
+const PLAY_SVG = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>`;
+const STOP_SVG = `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="1.5"/></svg>`;
+
 const app = document.querySelector<HTMLDivElement>("#app")!;
 
 app.innerHTML = `
@@ -13,97 +19,103 @@ app.innerHTML = `
           <p>System / loopback audio recorder</p>
         </div>
       </div>
-      <div class="top-actions">
-        <button class="icon-btn" id="themeBtn" type="button" title="Toggle theme">Theme</button>
+      <div class="theme-toggle" role="group" aria-label="Theme">
+        <button type="button" id="themeLight" title="Light theme" aria-label="Light theme">${SUN_SVG}</button>
+        <button type="button" id="themeDark" title="Dark theme" aria-label="Dark theme">${MOON_SVG}</button>
       </div>
     </header>
 
-    <main class="stage">
-      <section class="transport">
-        <div class="timer-block">
-          <div class="timer" id="timer">00:00:00.0</div>
-          <div class="meta" id="fileMeta">Ready · 0 B</div>
-        </div>
-        <div class="controls">
-          <button class="btn btn-secondary" id="pauseBtn" type="button" disabled>Pause <span class="kbd">P</span></button>
-          <button class="btn btn-record" id="recordBtn" type="button">Rec <span class="kbd">R</span></button>
-          <button class="btn btn-secondary" id="stopBtn" type="button" disabled>Stop <span class="kbd">S</span></button>
-        </div>
-        <div class="status-chip"><span class="dot" id="statusDot"></span><span id="statusText">Idle</span></div>
-      </section>
+    <section class="transport">
+      <div class="timer" id="timer">00:00:00.0</div>
+      <div class="controls">
+        <button class="btn btn-icon" id="pauseBtn" type="button" disabled title="Pause (P)" aria-label="Pause">${PAUSE_SVG}</button>
+        <button class="btn btn-record" id="recordBtn" type="button" title="Record (R)" aria-label="Record"><span class="rec-dot"></span></button>
+        <button class="btn btn-icon" id="stopBtn" type="button" disabled title="Stop (S)" aria-label="Stop">${STOP_SVG}</button>
+      </div>
+      <div class="status-chip"><span class="dot" id="statusDot"></span><span id="statusText">Idle</span></div>
+    </section>
 
-      <section class="viz" aria-label="Waveform and meters">
-        <div class="wave-wrap">
-          <canvas id="waveform" width="860" height="180"></canvas>
-          <div class="clip-banner" id="clipBanner">CLIPPING</div>
-        </div>
-        <div class="meters">
-          <div class="meter">
-            <span>L</span>
-            <div class="meter-track">
-              <div class="meter-fill" id="meterL"></div>
-              <div class="meter-peak" id="peakL"></div>
-            </div>
-          </div>
-          <div class="meter">
-            <span>R</span>
-            <div class="meter-track">
-              <div class="meter-fill" id="meterR"></div>
-              <div class="meter-peak" id="peakR"></div>
-            </div>
+    <section class="viz" aria-label="Waveform and meters">
+      <div class="wave-wrap">
+        <canvas id="waveform" width="860" height="180"></canvas>
+        <div class="clip-banner" id="clipBanner">CLIPPING</div>
+      </div>
+      <div class="meters">
+        <div class="meter">
+          <span>L</span>
+          <div class="meter-track">
+            <div class="meter-fill" id="meterL"></div>
+            <div class="meter-peak" id="peakL"></div>
           </div>
         </div>
-      </section>
+        <div class="meter">
+          <span>R</span>
+          <div class="meter-track">
+            <div class="meter-fill" id="meterR"></div>
+            <div class="meter-peak" id="peakR"></div>
+          </div>
+        </div>
+      </div>
+    </section>
 
-      <section class="settings">
-        <div class="field">
-          <label for="device">Loopback device</label>
-          <select id="device"></select>
+    <section class="settings">
+      <div class="field">
+        <label for="device">Loopback device</label>
+        <select id="device"></select>
+      </div>
+      <div class="field">
+        <label for="appSource">Per-app source</label>
+        <select id="appSource"></select>
+      </div>
+      <div class="field">
+        <label for="sampleRate">Sample rate</label>
+        <select id="sampleRate">
+          <option value="hz48000">48 kHz</option>
+          <option value="hz44100">44.1 kHz</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="format">Export format</label>
+        <select id="format">
+          <option value="wav">WAV</option>
+          <option value="mp3">MP3</option>
+        </select>
+      </div>
+      <div class="field save-field">
+        <label for="outputDir">Save folder</label>
+        <div class="field-row">
+          <input id="outputDir" type="text" readonly placeholder="Choose a folder…" />
+          <button class="browse-btn" id="browseBtn" type="button">Browse</button>
         </div>
-        <div class="field">
-          <label for="appSource">Per-app source</label>
-          <select id="appSource"></select>
-        </div>
-        <div class="field">
-          <label for="sampleRate">Sample rate</label>
-          <select id="sampleRate">
-            <option value="hz48000">48 kHz</option>
-            <option value="hz44100">44.1 kHz</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="format">Export format</label>
-          <select id="format">
-            <option value="wav">WAV (24-bit)</option>
-            <option value="mp3">MP3 (320 kbps)</option>
-          </select>
-        </div>
-        <div class="field" style="grid-column: span 2;">
-          <label for="outputDir">Save folder</label>
-          <div class="field-row">
-            <input id="outputDir" type="text" readonly placeholder="Choose a folder…" />
-            <button class="icon-btn" id="browseBtn" type="button">Browse</button>
-          </div>
-        </div>
-        <div class="toggles" style="grid-column: 1 / -1;">
-          <label class="toggle"><input type="checkbox" id="noiseReduction" /> Noise reduction</label>
-          <label class="toggle"><input type="checkbox" id="autoSplit" /> Auto-split on silence</label>
-        </div>
-      </section>
-    </main>
+      </div>
+      <div class="toggles">
+        <label class="toggle">
+          <input type="checkbox" id="noiseReduction" />
+          <span class="toggle-ui" aria-hidden="true"></span>
+          Noise reduction
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="autoSplit" />
+          <span class="toggle-ui" aria-hidden="true"></span>
+          Auto-split on silence
+        </label>
+      </div>
+    </section>
 
     <footer class="footer">
-      <div id="capsNote">Loading capture backend…</div>
-      <div>Hotkeys: <span class="kbd">R</span> record · <span class="kbd">P</span> pause · <span class="kbd">S</span> stop</div>
+      <div class="hotkeys">
+        <strong>R</strong> Record &nbsp;•&nbsp; <strong>P</strong> Pause &nbsp;•&nbsp; <strong>S</strong> Stop
+      </div>
+      <div class="caps-note" id="capsNote">Loading capture backend…</div>
     </footer>
   </div>
   <div class="error-toast" id="toast"></div>
 `;
 
 const els = {
-  themeBtn: $("#themeBtn"),
+  themeLight: $("#themeLight") as HTMLButtonElement,
+  themeDark: $("#themeDark") as HTMLButtonElement,
   timer: $("#timer"),
-  fileMeta: $("#fileMeta"),
   pauseBtn: $("#pauseBtn") as HTMLButtonElement,
   recordBtn: $("#recordBtn") as HTMLButtonElement,
   stopBtn: $("#stopBtn") as HTMLButtonElement,
@@ -120,7 +132,7 @@ const els = {
   sampleRate: $("#sampleRate") as HTMLSelectElement,
   format: $("#format") as HTMLSelectElement,
   outputDir: $("#outputDir") as HTMLInputElement,
-  browseBtn: $("#browseBtn"),
+  browseBtn: $("#browseBtn") as HTMLButtonElement,
   noiseReduction: $("#noiseReduction") as HTMLInputElement,
   autoSplit: $("#autoSplit") as HTMLInputElement,
   capsNote: $("#capsNote"),
@@ -146,13 +158,6 @@ function formatTime(ms: number): string {
   return `${p(hours)}:${p(mins)}:${p(secs)}.${tenths}`;
 }
 
-function formatBytes(n: number): string {
-  if (n < 1024) return `${n} B`;
-  if (n < 1024 ** 2) return `${(n / 1024).toFixed(1)} KB`;
-  if (n < 1024 ** 3) return `${(n / 1024 ** 2).toFixed(2)} MB`;
-  return `${(n / 1024 ** 3).toFixed(2)} GB`;
-}
-
 function showError(msg: string) {
   els.toast.textContent = msg;
   els.toast.classList.add("show");
@@ -162,7 +167,8 @@ function showError(msg: string) {
 function applyTheme(theme: "dark" | "light") {
   document.documentElement.setAttribute("data-theme", theme);
   localStorage.setItem("buka-theme", theme);
-  els.themeBtn.textContent = theme === "dark" ? "Light" : "Dark";
+  els.themeLight.classList.toggle("active", theme === "light");
+  els.themeDark.classList.toggle("active", theme === "dark");
 }
 
 function readSettingsFromUi(): RecordSettings {
@@ -189,10 +195,6 @@ async function persistSettings() {
 
 function updateTransport(stats: SessionStats) {
   els.timer.textContent = formatTime(stats.elapsed_ms);
-  const path = stats.file_path ? stats.file_path.split(/[\\/]/).pop() : "—";
-  els.fileMeta.textContent = `${path} · ${formatBytes(stats.bytes_written)}${
-    stats.segment_index > 0 ? ` · seg ${stats.segment_index}` : ""
-  }`;
 
   const recording = stats.state === "recording";
   const paused = stats.state === "paused";
@@ -202,17 +204,13 @@ function updateTransport(stats: SessionStats) {
   els.pauseBtn.disabled = !active;
   els.stopBtn.disabled = !active;
   els.recordBtn.classList.toggle("recording", recording);
-  els.pauseBtn.textContent = paused
-    ? `Resume `
-    : `Pause `;
-  // re-append kbd hint
-  els.pauseBtn.innerHTML = paused
-    ? `Resume <span class="kbd">P</span>`
-    : `Pause <span class="kbd">P</span>`;
+  els.recordBtn.dataset.state = recording ? "recording" : paused ? "paused" : "idle";
+  els.pauseBtn.innerHTML = paused ? PLAY_SVG : PAUSE_SVG;
+  els.pauseBtn.title = paused ? "Resume (P)" : "Pause (P)";
+  els.pauseBtn.setAttribute("aria-label", paused ? "Resume" : "Pause");
 
   els.statusDot.className = "dot" + (recording ? " live" : paused ? " paused" : "");
-  els.statusText.textContent =
-    recording ? "Recording" : paused ? "Paused" : "Idle";
+  els.statusText.textContent = recording ? "Recording" : paused ? "Paused" : "Idle";
 
   const locked = active;
   [
@@ -232,7 +230,7 @@ function drawWaveform(values: number[]) {
   const canvas = els.waveform;
   const dpr = window.devicePixelRatio || 1;
   const cssW = canvas.clientWidth || 860;
-  const cssH = canvas.clientHeight || 180;
+  const cssH = canvas.clientHeight || 168;
   if (canvas.width !== Math.floor(cssW * dpr) || canvas.height !== Math.floor(cssH * dpr)) {
     canvas.width = Math.floor(cssW * dpr);
     canvas.height = Math.floor(cssH * dpr);
@@ -243,18 +241,16 @@ function drawWaveform(values: number[]) {
 
   const mid = cssH / 2;
   const theme = document.documentElement.getAttribute("data-theme");
-  ctx.strokeStyle = theme === "light" ? "rgba(15,32,51,0.08)" : "rgba(255,255,255,0.06)";
+  ctx.strokeStyle = theme === "light" ? "rgba(15,32,51,0.08)" : "rgba(255,255,255,0.05)";
   ctx.beginPath();
   ctx.moveTo(0, mid);
   ctx.lineTo(cssW, mid);
   ctx.stroke();
 
-  const accent = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim();
-  const grad = ctx.createLinearGradient(0, 0, cssW, 0);
-  grad.addColorStop(0, accent);
-  grad.addColorStop(1, "#4f8cff");
-  ctx.fillStyle = grad;
-  ctx.globalAlpha = 0.9;
+  const accent = getComputedStyle(document.documentElement).getPropertyValue("--accent-bright").trim()
+    || getComputedStyle(document.documentElement).getPropertyValue("--accent").trim();
+  ctx.fillStyle = accent;
+  ctx.globalAlpha = 0.92;
 
   const n = values.length;
   const barW = cssW / n;
@@ -262,8 +258,9 @@ function drawWaveform(values: number[]) {
     const mag = Math.max(0.02, values[i]);
     const h = mag * (cssH * 0.42);
     const x = i * barW;
-    ctx.fillRect(x + 1, mid - h, Math.max(1, barW - 2), h);
-    ctx.fillRect(x + 1, mid, Math.max(1, barW - 2), h);
+    const w = Math.max(1.5, barW - 1.5);
+    ctx.fillRect(x + 0.5, mid - h, w, h);
+    ctx.fillRect(x + 0.5, mid, w, h);
   }
   ctx.globalAlpha = 1;
 }
@@ -343,7 +340,7 @@ async function init() {
   ]);
 
   settings = { ...defaults, output_dir: defaults.output_dir || outDir };
-  els.capsNote.textContent = `${caps.platform}: ${caps.loopback_backend}. ${caps.notes}`;
+  els.capsNote.textContent = `${caps.platform}: ${caps.loopback_backend}`;
 
   els.device.innerHTML = devices
     .map(
@@ -379,9 +376,12 @@ function escapeHtml(s: string): string {
   );
 }
 
-els.themeBtn.addEventListener("click", () => {
-  const cur = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
-  applyTheme(cur === "dark" ? "light" : "dark");
+els.themeLight.addEventListener("click", () => {
+  applyTheme("light");
+  drawWaveform(waveHistory);
+});
+els.themeDark.addEventListener("click", () => {
+  applyTheme("dark");
   drawWaveform(waveHistory);
 });
 
