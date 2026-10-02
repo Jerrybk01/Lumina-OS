@@ -1,0 +1,47 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Buka Quality Sound",
+  "version": "1.0.0",
+  "identifier": "app.buka.qualitysound",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Buka Quality Sound — System Audio Recorder",
+        "width": 980,
+        "height": 720,
+        "minWidth": 800,
+        "minHeight": 600,
+        "resizable": true,
+        "fullscreen": false,
+        "decorations": true,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "category": "Music",
+    "shortDescription": "Buka Quality Sound — system/loopback audio recorder",
+    "longDescription": "Buka Quality Sound captures WASAPI/CoreAudio loopback audio with waveform metering, WAV/MP3 export, silence auto-split, and optional noise reduction."
+  },
+  "plugins": {
+    "global-shortcut": {}
+  }
+}

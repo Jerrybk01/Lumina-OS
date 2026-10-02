@@ -1,0 +1,3 @@
+//! Deprecated stub. The real ScreenCaptureKit bridge is `SCKAudioCapture.m`
+//! (compiled by `build.rs` on macOS). Keep this file only as a pointer for
+//! older docs that linked the `.example` name.
