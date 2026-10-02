@@ -3,7 +3,8 @@
 This zip is a **portable distribution** of **Buka Quality Sound** (system / loopback audio recorder).
 
 It includes the full app source, a prebuilt web UI (`dist/`), and platform launch scripts.
-On Windows and macOS you get real WASAPI / Core Audio loopback after a one-time toolchain setup.
+On Windows you get WASAPI device/process loopback; on macOS ScreenCaptureKit system audio
+(requires Screen Recording); on Linux a Pulse/PipeWire sink monitor (`libpulse-dev` required).
 A full native installer binary is produced with `npm run tauri:build` on each OS.
 
 ## Quick start
@@ -22,8 +23,8 @@ A full native installer binary is produced with `npm run tauri:build` on each OS
    ```
 
 ### Linux
-1. Install Node.js 20+, Rust, and Tauri Linux deps (`libwebkit2gtk-4.1-dev`, `libgtk-3-dev`).
-2. Optional real capture: `libpulse-dev` and Cargo feature `linux-pulse`.
+1. Install Node.js 20+, Rust, Tauri Linux deps (`libwebkit2gtk-4.1-dev`, `libgtk-3-dev`), and `libpulse-dev`.
+2. Ensure PipeWire or PulseAudio is running (sink monitor capture).
 3. ```bash
    chmod +x run-linux.sh
    ./run-linux.sh

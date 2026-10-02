@@ -1,5 +1,6 @@
 //! Audio subsystem: types, metering, DSP, platform capture, and engine.
 
+pub mod app_source;
 pub mod engine;
 pub mod meter;
 pub mod noise_reduce;

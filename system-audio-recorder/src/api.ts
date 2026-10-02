@@ -106,8 +106,8 @@ function demoInvoke<T>(cmd: string, args?: Record<string, unknown>): T {
       return {
         platform: "demo",
         loopback_backend: "Browser demo (no native loopback)",
-        per_app_selection: true,
-        notes: "Run via `npm run tauri:dev` on Windows/macOS for real capture.",
+        per_app_selection: false,
+        notes: "UI-only demo. Real loopback requires `npm run tauri:dev` (WASAPI / ScreenCaptureKit / Pulse).",
       } as T;
     case "list_devices":
       return [

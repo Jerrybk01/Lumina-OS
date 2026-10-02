@@ -23,5 +23,5 @@ fi
 echo "Installing dependencies..."
 npm install
 echo "Starting Buka Quality Sound..."
-echo "(Linux loopback uses Pulse/PipeWire monitor; enable Cargo feature linux-pulse for real capture.)"
+echo "(Linux loopback uses Pulse/PipeWire sink monitor — requires libpulse and a running server.)"
 npm run tauri:dev

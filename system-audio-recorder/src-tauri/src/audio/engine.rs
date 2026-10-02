@@ -551,9 +551,9 @@ fn start_platform_capture(
 ) -> Result<PlatformCapture, String> {
     #[cfg(windows)]
     {
-        let _ = app_source_id;
         return Ok(PlatformCapture::Wasapi(super::wasapi::WasapiCapture::start(
             device_id,
+            app_source_id,
             sample_rate,
             tx,
         )?));

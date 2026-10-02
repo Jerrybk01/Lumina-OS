@@ -354,7 +354,7 @@ async function init() {
     .join("");
   if (!caps.per_app_selection) {
     els.appSource.disabled = true;
-    els.appSource.title = "Per-app selection is limited on this platform";
+    els.appSource.title = "Per-app capture is not available on this platform";
   }
 
   els.sampleRate.value = settings.sample_rate;

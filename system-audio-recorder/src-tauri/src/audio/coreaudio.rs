@@ -1,17 +1,17 @@
 //! macOS Core Audio / ScreenCaptureKit loopback backend.
 //!
-//! Strategy:
-//! 1. Prefer **ScreenCaptureKit audio** (macOS 13+) which can capture system
-//!    output and optionally filter by application — true system/loopback audio,
-//!    not the microphone.
-//! 2. Fall back to a **multi-output aggregate device** + tapping the default
-//!    output stream when SCK is unavailable.
+//! Captures **system output** (not the microphone) via ScreenCaptureKit audio
+//! (`capturesAudio`, microphone off). Linked Objective-C helper:
+//! `macos/SCKAudioCapture.m` (compiled by `build.rs`).
 //!
-//! Permission note: Screen Recording permission is required for SCK audio.
-//! The UI surfaces a clear error if permission is denied.
+//! Requires **Screen Recording** permission. Per-app filtering uses SCK
+//! shareable applications when the user selects a `pid:…` source.
 
 #![cfg(target_os = "macos")]
 
+use std::ffi::{c_char, c_void, CStr, CString};
+use std::os::raw::c_int;
+use std::ptr;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread::{self, JoinHandle};
@@ -19,29 +19,65 @@ use std::thread::{self, JoinHandle};
 use crossbeam_channel::Sender;
 use tracing::{error, info, warn};
 
+use super::app_source::parse_app_source_pid;
 use super::types::{AppAudioSource, AudioChunk, AudioDeviceInfo, CaptureCapabilities};
+
+type BukaAudioCallback = Option<
+    unsafe extern "C" fn(
+        interleaved: *const f32,
+        frames: u32,
+        channels: u32,
+        sample_rate: u32,
+        userdata: *mut c_void,
+    ),
+>;
+
+extern "C" {
+    fn buka_sck_start(
+        app_filter_utf8: *const c_char,
+        sample_rate: u32,
+        callback: BukaAudioCallback,
+        userdata: *mut c_void,
+        out_handle: *mut *mut c_void,
+        err_buf: *mut c_char,
+        err_buf_len: usize,
+    ) -> c_int;
+
+    fn buka_sck_stop(handle: *mut c_void);
+
+    fn buka_sck_list_apps(
+        ids_out: *mut *mut c_char,
+        names_out: *mut *mut c_char,
+        max_items: c_int,
+        err_buf: *mut c_char,
+        err_buf_len: usize,
+    ) -> c_int;
+
+    fn buka_sck_free_cstr(s: *mut c_char);
+}
 
 pub fn capabilities() -> CaptureCapabilities {
     CaptureCapabilities {
         platform: "macos".into(),
-        loopback_backend: "Core Audio + ScreenCaptureKit (system audio)".into(),
+        loopback_backend: "ScreenCaptureKit audio (system output)".into(),
         per_app_selection: true,
-        notes: "Per-app filtering uses ScreenCaptureKit (macOS 13+). \
-                Grant Screen Recording permission in System Settings → Privacy & Security. \
-                Older macOS builds use aggregate-device tapping of the default output."
+        notes: "Records system output via ScreenCaptureKit — not the microphone. \
+                Grant Screen Recording in System Settings → Privacy & Security. \
+                Per-app filter lists running apps from SCShareableContent (macOS 13+)."
             .into(),
     }
 }
 
 pub fn list_loopback_devices() -> Result<Vec<AudioDeviceInfo>, String> {
-    // Enumerate Core Audio output devices; each can be tapped for loopback-style capture.
-    let devices = coreaudio_list_outputs()?;
-    if devices.is_empty() {
-        return Err(
-            "No Core Audio output devices found. Connect speakers/headphones and retry.".into(),
-        );
-    }
-    Ok(devices)
+    // SCK captures the system mix for a display filter; expose a single clear target.
+    Ok(vec![AudioDeviceInfo {
+        id: "system-output".into(),
+        name: "System Output (ScreenCaptureKit)".into(),
+        is_loopback: true,
+        is_default: true,
+        sample_rates: vec![44_100, 48_000],
+        channels: 2,
+    }])
 }
 
 pub fn list_app_sources() -> Result<Vec<AppAudioSource>, String> {
@@ -50,7 +86,12 @@ pub fn list_app_sources() -> Result<Vec<AppAudioSource>, String> {
         name: "All system audio".into(),
         pid: None,
     }];
-    apps.extend(sck_list_applications().unwrap_or_default());
+    match sck_list_applications() {
+        Ok(extra) => apps.extend(extra),
+        Err(e) => {
+            warn!("SCK app list unavailable: {e}");
+        }
+    }
     Ok(apps)
 }
 
@@ -61,7 +102,7 @@ pub struct CoreAudioCapture {
 
 impl CoreAudioCapture {
     pub fn start(
-        device_id: Option<String>,
+        _device_id: Option<String>,
         app_source_id: Option<String>,
         target_sample_rate: u32,
         tx: Sender<AudioChunk>,
@@ -69,23 +110,17 @@ impl CoreAudioCapture {
         let stop = Arc::new(AtomicBool::new(false));
         let stop_flag = Arc::clone(&stop);
 
+        // Fail fast: try a short probe start/stop so the UI gets a permission error
+        // instead of a silent "recording" session.
+        validate_sck_available(app_source_id.as_deref(), target_sample_rate)?;
+
         let handle = thread::Builder::new()
-            .name("coreaudio-loopback".into())
+            .name("sck-loopback".into())
             .spawn(move || {
-                let result = if sck_available() {
-                    sck_capture_loop(
-                        device_id,
-                        app_source_id,
-                        target_sample_rate,
-                        tx,
-                        stop_flag,
-                    )
-                } else {
-                    warn!("ScreenCaptureKit unavailable; using aggregate-device tap fallback");
-                    aggregate_tap_loop(device_id, target_sample_rate, tx, stop_flag)
-                };
-                if let Err(e) = result {
-                    error!("Core Audio capture ended: {e}");
+                if let Err(e) =
+                    sck_capture_loop(app_source_id, target_sample_rate, tx, stop_flag)
+                {
+                    error!("ScreenCaptureKit capture ended: {e}");
                 }
             })
             .map_err(|e| format!("spawn capture thread: {e}"))?;
@@ -104,96 +139,154 @@ impl CoreAudioCapture {
     }
 }
 
-fn sck_available() -> bool {
-    // ScreenCaptureKit is present on macOS 13+. Runtime check via weak linking
-    // is handled in the Objective-C bridge below; compile-time we assume modern SDKs.
-    true
+fn validate_sck_available(app_source_id: Option<&str>, sample_rate: u32) -> Result<(), String> {
+    // List apps as a lightweight permission / SCK presence check. Empty list with
+    // an error means SCK/content failed; empty list with Ok is still acceptable
+    // (no apps, but "All system audio" works).
+    match sck_list_applications() {
+        Ok(_) => Ok(()),
+        Err(e) => {
+            let _ = (app_source_id, sample_rate);
+            Err(format!(
+                "{e}. Grant Screen Recording to Buka Quality Sound in \
+                 System Settings → Privacy & Security, then restart the app."
+            ))
+        }
+    }
 }
 
 fn sck_list_applications() -> Result<Vec<AppAudioSource>, String> {
-    // Populated via SCShareableContent at runtime on real macOS builds.
-    // Returns empty when permission is missing so the UI still offers "All system audio".
-    Ok(Vec::new())
+    const MAX: usize = 256;
+    let mut id_ptrs: Vec<*mut c_char> = vec![ptr::null_mut(); MAX];
+    let mut name_ptrs: Vec<*mut c_char> = vec![ptr::null_mut(); MAX];
+    let mut err = vec![0i8; 512];
+
+    let n = unsafe {
+        buka_sck_list_apps(
+            id_ptrs.as_mut_ptr(),
+            name_ptrs.as_mut_ptr(),
+            MAX as c_int,
+            err.as_mut_ptr(),
+            err.len(),
+        )
+    };
+    if n < 0 {
+        let msg = unsafe { CStr::from_ptr(err.as_ptr()) }
+            .to_string_lossy()
+            .into_owned();
+        return Err(if msg.is_empty() {
+            "ScreenCaptureKit application list failed".into()
+        } else {
+            msg
+        });
+    }
+
+    let mut out = Vec::with_capacity(n as usize);
+    for i in 0..(n as usize) {
+        let id = unsafe {
+            let p = id_ptrs[i];
+            let s = if p.is_null() {
+                String::new()
+            } else {
+                CStr::from_ptr(p).to_string_lossy().into_owned()
+            };
+            buka_sck_free_cstr(p);
+            s
+        };
+        let name = unsafe {
+            let p = name_ptrs[i];
+            let s = if p.is_null() {
+                String::new()
+            } else {
+                CStr::from_ptr(p).to_string_lossy().into_owned()
+            };
+            buka_sck_free_cstr(p);
+            s
+        };
+        let pid = parse_app_source_pid(Some(&id));
+        if !id.is_empty() {
+            out.push(AppAudioSource { id, name, pid });
+        }
+    }
+    Ok(out)
+}
+
+struct CallbackState {
+    tx: Sender<AudioChunk>,
+}
+
+unsafe extern "C" fn on_audio(
+    interleaved: *const f32,
+    frames: u32,
+    channels: u32,
+    sample_rate: u32,
+    userdata: *mut c_void,
+) {
+    if interleaved.is_null() || userdata.is_null() || frames == 0 || channels == 0 {
+        return;
+    }
+    let state = &*(userdata as *const CallbackState);
+    let len = (frames as usize) * (channels as usize);
+    let samples = std::slice::from_raw_parts(interleaved, len).to_vec();
+    let _ = state.tx.send(AudioChunk {
+        samples,
+        channels: channels as u16,
+        sample_rate,
+    });
 }
 
 fn sck_capture_loop(
-    _device_id: Option<String>,
     app_source_id: Option<String>,
     target_sample_rate: u32,
     tx: Sender<AudioChunk>,
     stop: Arc<AtomicBool>,
 ) -> Result<(), String> {
+    let filter = app_source_id
+        .as_deref()
+        .filter(|s| !s.is_empty() && !s.eq_ignore_ascii_case("system"))
+        .unwrap_or("system");
     info!(
-        "Starting ScreenCaptureKit system-audio capture (app filter: {:?}, target {} Hz)",
-        app_source_id, target_sample_rate
+        "Starting ScreenCaptureKit system-audio capture (filter={filter}, target {target_sample_rate} Hz)"
     );
 
-    // Production path: create SCContentFilter (display or app), SCStreamConfiguration
-    // with capturesAudio=true / captureMicrophone=false, then SCStream with an
-    // SCStreamOutput that receives CMSampleBuffer audio and converts to f32 PCM.
-    //
-    // The stream callback pushes AudioChunk through `tx`. We keep a blocking wait
-    // here so the dedicated capture thread owns the SCK lifetime.
+    let filter_c = CString::new(filter).map_err(|e| format!("app filter: {e}"))?;
+    let state = Box::new(CallbackState { tx });
+    let state_ptr = Box::into_raw(state) as *mut c_void;
 
-    // Bridge placeholder that documents the contract; real macOS builds link the
-    // Objective-C helper in `macos/SCKAudioCapture.m` (see README).
-    run_sck_bridge(app_source_id, target_sample_rate, tx, stop)
-}
+    let mut handle: *mut c_void = ptr::null_mut();
+    let mut err = vec![0i8; 512];
+    let rc = unsafe {
+        buka_sck_start(
+            filter_c.as_ptr(),
+            target_sample_rate,
+            Some(on_audio),
+            state_ptr,
+            &mut handle,
+            err.as_mut_ptr(),
+            err.len(),
+        )
+    };
+    if rc != 0 || handle.is_null() {
+        unsafe {
+            drop(Box::from_raw(state_ptr as *mut CallbackState));
+        }
+        let msg = unsafe { CStr::from_ptr(err.as_ptr()) }
+            .to_string_lossy()
+            .into_owned();
+        return Err(if msg.is_empty() {
+            format!("ScreenCaptureKit start failed (code {rc})")
+        } else {
+            msg
+        });
+    }
 
-fn run_sck_bridge(
-    app_source_id: Option<String>,
-    sample_rate: u32,
-    tx: Sender<AudioChunk>,
-    stop: Arc<AtomicBool>,
-) -> Result<(), String> {
-    // When the native SCK helper is not linked (cross-compile / CI), emit silence
-    // frames so the rest of the pipeline (meters, writers, UI) can be exercised.
-    // On a signed macOS build with Screen Recording permission, replace this with
-    // the real SCStream callback feed.
-    warn!(
-        "SCK native helper not active in this build; pipeline idle-wait \
-         (grant Screen Recording on macOS and rebuild with macos feature)"
-    );
-
-    let channels = 2u16;
-    let frames = (sample_rate / 50) as usize; // 20ms
     while !stop.load(Ordering::SeqCst) {
-        // Idle: do not fabricate audio. Wait for stop.
-        // Real SCK callback would `tx.send(AudioChunk { ... })` here.
-        let _ = (&app_source_id, &tx, channels, frames);
         std::thread::sleep(std::time::Duration::from_millis(20));
     }
-    Ok(())
-}
 
-fn aggregate_tap_loop(
-    device_id: Option<String>,
-    target_sample_rate: u32,
-    tx: Sender<AudioChunk>,
-    stop: Arc<AtomicBool>,
-) -> Result<(), String> {
-    info!(
-        "Aggregate-device tap fallback (device={:?}, rate={} Hz)",
-        device_id, target_sample_rate
-    );
-    // Create a multi-output aggregate combining the selected output + a tap,
-    // install an IOProc, convert buffers to f32, send on `tx`.
-    while !stop.load(Ordering::SeqCst) {
-        let _ = &tx;
-        std::thread::sleep(std::time::Duration::from_millis(20));
+    unsafe {
+        buka_sck_stop(handle);
+        drop(Box::from_raw(state_ptr as *mut CallbackState));
     }
     Ok(())
-}
-
-fn coreaudio_list_outputs() -> Result<Vec<AudioDeviceInfo>, String> {
-    // Uses AudioObjectGetPropertyData(kAudioHardwarePropertyDevices) filtered to outputs.
-    // Provide at least the default system output so the UI is usable.
-    Ok(vec![AudioDeviceInfo {
-        id: "default".into(),
-        name: "Default System Output".into(),
-        is_loopback: true,
-        is_default: true,
-        sample_rates: vec![44_100, 48_000],
-        channels: 2,
-    }])
 }
