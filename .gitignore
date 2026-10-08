@@ -6,3 +6,9 @@ node_modules/
 .env
 .env.*
 *.local
+buka-running.txt
+
+__pycache__/
+*.zip
+/app/SadTalker/
+/app/results/

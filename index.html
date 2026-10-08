@@ -3,12 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lumina OS</title>
+  <title>BUKA PHOTO PRO</title>
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="assets/styles.css" />
+  <link rel="stylesheet" href="assets/fonts/fonts.css" />
+  <link rel="stylesheet" href="assets/ui/styles.css" />
 </head>
 <body>
   <div id="app" class="app empty" data-view="photobase">
@@ -19,25 +17,56 @@
       <div class="light-vectors" id="lightVectors" aria-hidden="true"></div>
 
       <section class="empty-state" id="emptyState">
-        <img class="empty-mark" src="icon.svg" alt="" />
-        <h1 class="brand-hero">Lumina</h1>
-        <p class="brand-line">Reconstruct the scene. Edit light, material, and photon scatter — not layers.</p>
+        <img class="empty-mark" src="assets/ui/empty-gem.png" alt="" />
+        <h1 class="brand-hero" data-text="BUKA PHOTO PRO">BUKA PHOTO PRO</h1>
+        <p class="brand-line">Edit light and color — not layers.</p>
         <div class="empty-actions">
           <button type="button" class="cta" id="btnOpen">Open image / RAW</button>
-          <button type="button" class="cta ghost" id="btnDemo">Load demo landscape</button>
-          <button type="button" class="cta ghost" id="btnProjectsEmpty">Projects</button>
+          <button type="button" class="cta" id="btnCamera">Live camera</button>
+          <p class="empty-avatar-hint">For a generated talking video, open <b>AI Talking Avatar</b> in Pinokio.</p>
+          <button type="button" class="cta gold" id="btnProjectsEmpty">Projects</button>
         </div>
-        <p class="empty-hint">Drop a photo anywhere · Hold <kbd>Alt</kbd> Scenescape · <kbd>⌘/Ctrl</kbd>+<kbd>L</kbd> Intent · Voice mic</p>
+        <p class="empty-hint">Drop a photo to start</p>
       </section>
     </main>
 
-    <div class="material-hud" id="materialHud" hidden>
-      <div class="hud-glow" aria-hidden="true"></div>
-      <header class="hud-head">
-        <span class="hud-context" id="hudContext">Atmospheric</span>
-        <span class="hud-entity" id="hudEntity">Sky</span>
-      </header>
-      <div class="hud-controls" id="hudControls"></div>
+    <div class="camera-overlay" id="cameraOverlay" hidden>
+      <div class="camera-card" role="dialog" aria-modal="true" aria-labelledby="cameraTitle">
+        <header class="camera-head">
+          <div>
+            <strong id="cameraTitle">Live camera</strong>
+            <span id="cameraSubtitle">Capture a still or record a clip</span>
+          </div>
+          <button type="button" class="icon-btn" id="btnCameraClose" aria-label="Close camera">×</button>
+        </header>
+        <div class="camera-stage" id="cameraStage">
+          <video id="cameraVideo" playsinline autoplay muted></video>
+          <span class="rec-badge" id="cameraRecBadge" hidden>
+            <i aria-hidden="true"></i><span id="cameraRecTime">0:00</span>
+          </span>
+          <div class="camera-zoom" id="cameraZoomBar">
+            <button type="button" class="chrome-btn zoom-btn" id="btnCameraZoomOut" title="Zoom out">−</button>
+            <button type="button" class="chrome-btn zoom-label" id="cameraZoomLabel" title="Reset zoom">1.0×</button>
+            <button type="button" class="chrome-btn zoom-btn" id="btnCameraZoomIn" title="Zoom in">+</button>
+          </div>
+          <p class="camera-status" id="cameraStatus">Starting camera…</p>
+        </div>
+        <div class="camera-review" id="cameraReview" hidden>
+          <span id="cameraReviewInfo"></span>
+          <div class="camera-review-actions">
+            <button type="button" class="chrome-btn" id="btnClipDiscard">Discard</button>
+            <button type="button" class="chrome-btn" id="btnClipSave">Save video…</button>
+          </div>
+        </div>
+        <footer class="camera-actions">
+          <label class="camera-toggle">
+            <input type="checkbox" id="cameraMic" /> Mic
+          </label>
+          <button type="button" class="cta ghost" id="btnCameraFlip" hidden>Flip</button>
+          <button type="button" class="cta ghost" id="btnCameraRecord" disabled>Record</button>
+          <button type="button" class="cta" id="btnCameraShot" disabled>Capture</button>
+        </footer>
+      </div>
     </div>
 
     <aside class="thought-graph" id="thoughtGraph" aria-label="Thought graph" data-open="false">
@@ -72,6 +101,16 @@
       <div class="projects-list" id="projectsList"></div>
     </aside>
 
+    <aside class="material-inspector" id="materialHud" hidden aria-label="Adjust panel">
+      <div class="hud-glow" aria-hidden="true"></div>
+      <header class="hud-head">
+        <span class="hud-context" id="hudContext">Adjust</span>
+        <span class="hud-entity" id="hudEntity">Editing tools</span>
+        <button type="button" class="icon-btn hud-close" id="btnCloseHud" aria-label="Close material controls">×</button>
+      </header>
+      <div class="hud-controls" id="hudControls"></div>
+    </aside>
+
     <div class="intent-dock" id="intentDock">
       <div class="intent-sliders" id="intentSliders" hidden></div>
       <form class="intent-bar" id="intentForm" autocomplete="off">
@@ -80,7 +119,7 @@
           type="text"
           id="intentInput"
           name="intent"
-          placeholder="Intent or “select sky” — e.g. Reconstruct sky detail from scattering"
+          placeholder="Describe an edit…"
           aria-label="Intent input"
         />
         <button type="button" class="intent-mic" id="btnVoice" title="Voice intent" aria-label="Voice intent">mic</button>
@@ -88,38 +127,111 @@
       </form>
     </div>
 
+    <nav class="tools-menu" id="toolsMenu" aria-label="Photo editing tools">
+      <button type="button" class="tools-toggle" data-tools-toggle aria-expanded="false" aria-haspopup="true">
+        <span class="tools-toggle-icon" aria-hidden="true">☰</span>
+        Tools
+        <span class="tools-caret" aria-hidden="true">▾</span>
+      </button>
+      <div class="tools-panel" data-tools-panel hidden>
+        <div class="tools-panel-inner">
+          <div class="tools-cats" data-tools-cats role="tablist" aria-label="Tool categories"></div>
+          <div class="tools-items" data-tools-items role="menu"></div>
+        </div>
+      </div>
+    </nav>
+
     <header class="ghost-chrome" id="ghostChrome">
       <div class="chrome-brand">
         <img src="icon.svg" alt="" />
-        <span>Lumina</span>
+        <span>BUKA PHOTO PRO</span>
       </div>
       <div class="chrome-status" id="viewBadge">Photobase</div>
+      <div class="zoom-controls" id="zoomControls" title="Zoom · mouse wheel · Space+drag to pan">
+        <button type="button" class="chrome-btn zoom-btn" id="btnZoomOut" title="Zoom out">−</button>
+        <button type="button" class="chrome-btn zoom-label" id="btnZoomLabel" title="Fit to screen">100%</button>
+        <button type="button" class="chrome-btn zoom-btn" id="btnZoomIn" title="Zoom in">+</button>
+      </div>
       <div class="chrome-meta" id="chromeMeta"></div>
-      <div class="chrome-actions">
-        <button type="button" class="chrome-btn" id="btnToggleGraph" title="Thought Graph (G)">Graph</button>
-        <button type="button" class="chrome-btn" id="btnCompare" title="A/B compare (C)">A/B</button>
-        <button type="button" class="chrome-btn" id="btnPaint" title="Paint blend mask (M)">Mask</button>
+      <div class="chrome-actions" id="chromePrimary">
         <button type="button" class="chrome-btn" id="btnUndo" title="Undo (Z)">Undo</button>
-        <button type="button" class="chrome-btn" id="btnSave" title="Save project">Save</button>
-        <button type="button" class="chrome-btn" id="btnProjects" title="Projects">Projects</button>
-        <button type="button" class="chrome-btn" id="btnExport" title="Export PNG + sidecar">Export</button>
-        <button type="button" class="chrome-btn" id="btnReset" title="New session">Reset</button>
+        <button type="button" class="chrome-btn" id="btnSave" title="Save project file (Ctrl+S)">Save</button>
+        <button type="button" class="chrome-btn" id="btnExport" title="Export image to a folder on this computer">Export</button>
       </div>
     </header>
 
+    <nav class="work-rail" id="workRail" aria-label="Editing tools">
+      <button type="button" class="chrome-btn" id="btnErase" title="Erase objects (E)">Erase</button>
+      <button type="button" class="chrome-btn" id="btnCompose" title="Background &amp; text">Compose</button>
+      <button type="button" class="chrome-btn" id="btnText" title="Add text">Text</button>
+      <button type="button" class="chrome-btn" id="btnTransparent" title="Transparent background">Cutout</button>
+      <button type="button" class="chrome-btn" id="btnStudio" title="Studio backdrop">Studio</button>
+      <button type="button" class="chrome-btn" id="btnCompare" title="A/B compare (C)">A/B</button>
+      <button type="button" class="chrome-btn" id="btnPaint" title="Paint blend mask (M)">Mask</button>
+      <button type="button" class="chrome-btn" id="btnToggleGraph" title="Thought Graph (G)">Graph</button>
+      <button type="button" class="chrome-btn" id="btnProjects" title="Projects">Projects</button>
+      <button type="button" class="chrome-btn" id="btnReset" title="New session">New</button>
+    </nav>
+
+    <div class="size-overlay" id="sizeOverlay" hidden>
+      <div class="size-card" role="dialog" aria-modal="true" aria-labelledby="sizeTitle">
+        <header class="size-head">
+          <div>
+            <strong id="sizeTitle">Image size</strong>
+            <span id="sizeSubtitle">Resize the working image</span>
+          </div>
+          <button type="button" class="icon-btn" id="btnSizeClose" aria-label="Close">×</button>
+        </header>
+        <div class="size-body">
+          <p class="size-current" id="sizeCurrent"></p>
+          <div class="size-presets" id="sizePresets"></div>
+          <div class="size-fields">
+            <label>Width
+              <input type="number" id="sizeWidth" min="32" max="8192" step="1" />
+            </label>
+            <label>Height
+              <input type="number" id="sizeHeight" min="32" max="8192" step="1" />
+            </label>
+          </div>
+          <label class="size-lock">
+            <input type="checkbox" id="sizeLock" checked />
+            Constrain proportions
+          </label>
+          <div class="size-format" id="sizeFormatRow" hidden>
+            <label><input type="radio" name="sizeFormat" value="png" checked /> PNG</label>
+            <label><input type="radio" name="sizeFormat" value="jpeg" /> JPEG</label>
+          </div>
+          <p class="size-hint" id="sizeHint"></p>
+        </div>
+        <footer class="size-actions">
+          <button type="button" class="chrome-btn" id="btnSizeCancel">Cancel</button>
+          <button type="button" class="cta" id="btnSizeApply">Apply</button>
+        </footer>
+      </div>
+    </div>
+
     <div class="toast" id="toast" hidden role="status"></div>
     <input id="fileInput" class="sr-only" type="file" accept="image/*,.dng,.nef,.cr2,.cr3,.arw,.raf,.orf,.rw2" />
+    <input id="rawInput" class="sr-only" type="file" accept=".dng,.nef,.cr2,.cr3,.arw,.raf,.orf,.rw2,image/x-adobe-dng" />
+    <input id="projectInput" class="sr-only" type="file" accept=".json,.buka.json,application/json" />
   </div>
 
-  <script src="assets/reconstruct.js"></script>
-  <script src="assets/segment.js"></script>
-  <script src="assets/engine.js"></script>
-  <script src="assets/demo.js"></script>
-  <script src="assets/graph.js"></script>
-  <script src="assets/hud.js"></script>
-  <script src="assets/intent.js"></script>
-  <script src="assets/voice.js"></script>
-  <script src="assets/persist.js"></script>
-  <script src="assets/app.js"></script>
+  <script defer src="assets/core/reconstruct.js"></script>
+  <script defer src="assets/core/segment.js"></script>
+  <script defer src="assets/core/engine.js"></script>
+  <script defer src="assets/core/graph.js"></script>
+  <script defer src="assets/ui/hud.js"></script>
+  <script defer src="assets/tools/intent.js"></script>
+  <script defer src="assets/tools/voice.js"></script>
+  <script defer src="assets/core/persist.js"></script>
+  <script defer src="assets/ui/tools-menu.js"></script>
+  <script defer src="assets/ui/studio.js"></script>
+  <script defer src="assets/tools/camera.js"></script>
+  <script defer src="assets/tools/matte.js"></script>
+  <script defer src="assets/tools/inpaint.js"></script>
+  <script defer src="assets/tools/erase.js"></script>
+  <script defer src="assets/tools/bg-remove.js"></script>
+  <script defer src="assets/tools/compose.js"></script>
+  <script defer src="assets/ui/app.js"></script>
 </body>
 </html>

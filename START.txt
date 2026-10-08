@@ -1,0 +1,15 @@
+BUKA PHOTO PRO
+==============
+
+1. Unzip this folder (do not open files from inside the zip).
+2. Double-click start.bat once.
+
+That places a Desktop icon named “BUKA PHOTO PRO” and starts the editor
+in your browser. A small tray icon (near the clock) stays while you work.
+
+To quit: right-click the tray icon → Quit.
+
+Read USER-GUIDE.md in this folder, or Tools → Help → User Guide
+once the app is open.
+
+Pinokio users: keep this folder in Pinokio’s api directory.

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BUKA PHOTO PRO — User Guide</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="assets/fonts/fonts.css" />
+  <link rel="stylesheet" href="assets/ui/styles.css" />
+  <style>
+    html, body { height: auto; overflow: auto; }
+    .guide {
+      max-width: 44rem;
+      margin: 0 auto;
+      padding: 2.2rem 1.4rem 4rem;
+    }
+    .guide-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      margin-bottom: 0.4rem;
+    }
+    .guide-brand img { width: 36px; height: 36px; }
+    .guide h1 {
+      font-family: var(--font-brand);
+      font-size: 1.7rem;
+      margin: 0 0 0.35rem;
+    }
+    .guide .lede { color: var(--fog-dim); margin: 0 0 1.6rem; }
+    .guide h2 {
+      font-family: var(--font-brand);
+      font-size: 1.15rem;
+      margin: 1.8rem 0 0.55rem;
+      color: var(--photon);
+    }
+    .guide p, .guide li { line-height: 1.55; }
+    .guide ol, .guide ul { padding-left: 1.2rem; }
+    .guide li { margin: 0.35rem 0; }
+    .guide a { color: var(--ember); }
+    .guide kbd {
+      font-size: 0.82em;
+    }
+    .guide .back {
+      display: inline-block;
+      margin-bottom: 1.2rem;
+    }
+  </style>
+</head>
+<body>
+  <article class="guide">
+    <p><a class="back chrome-btn" href="index.html">← Back to the editor</a></p>
+    <div class="guide-brand">
+      <img src="icon.svg" alt="" />
+      <h1>BUKA PHOTO PRO user guide</h1>
+    </div>
+    <p class="lede">A local photo editor you run from a Desktop icon. Nothing is uploaded. Close the tray icon when you are finished.</p>
+
+    <h2 id="start">1. Start the app</h2>
+    <ol>
+      <li>Unzip the folder if you received a zip. Do not open files from inside the zip.</li>
+      <li>Double-click <strong>BUKA PHOTO PRO</strong> on the Desktop, or <strong>start.bat</strong> in the folder.</li>
+      <li>Your browser opens the editor. A tray icon appears near the clock.</li>
+      <li>To quit, right-click that tray icon and choose <strong>Quit</strong>.</li>
+    </ol>
+    <p>If the browser does not open, right-click the tray icon and choose <strong>Open BUKA PHOTO PRO</strong>. If a copy is already running, a second click just reopens the window.</p>
+
+    <h2 id="open">2. Open a photo</h2>
+    <ul>
+      <li><strong>Open image / RAW</strong> — JPEG, PNG, WebP, and most camera files.</li>
+      <li><strong>Tools → File → Open RAW preview…</strong> — uses the JPEG preview inside a RAW file (not a full develop).</li>
+      <li><strong>Live camera</strong> — stills and video. Needs this local app (not a <code>file://</code> page).</li>
+      <li>Drag a photo onto the window. Drag a <code>.buka.json</code> file to reopen a project.</li>
+    </ul>
+    <p>Large photos open at up to <strong>4096 px</strong> on the long edge so the tab stays responsive. Use <strong>Image Size…</strong> if you need a different working size.</p>
+
+    <h2 id="edit">3. Edit</h2>
+    <ul>
+      <li><strong>Adjust</strong> panel on the right — exposure, color, contrast, and more.</li>
+      <li><strong>Left rail</strong> — Erase, Compose, Text, Cutout, Studio, A/B, Mask, Graph, Projects, New.</li>
+      <li><strong>Looks</strong> — presets sit beside the rail. Close with <strong>×</strong>; reopen with the <strong>Looks</strong> chip or <strong>Tools → View → Looks panel</strong>.</li>
+      <li><strong>Intent</strong> bar at the bottom (or <kbd>Ctrl</kbd>+<kbd>L</kbd>) — type what you want, e.g. “golden hour sky” or “erase object”.</li>
+      <li><strong>Zoom</strong> — wheel, <kbd>+</kbd>/<kbd>−</kbd> in the top bar, or Space+drag to pan.</li>
+      <li><strong>Crop</strong> — Crop button, then Apply.</li>
+      <li><strong>Text</strong> — adds a responsive text box on the photo. Type, drag, and resize; words wrap and the type scales with the box.</li>
+    </ul>
+
+    <h2 id="erase">4. Erase objects</h2>
+    <p>Press <kbd>E</kbd>. Paint, box, or magic-select what should disappear, then <strong>Erase &amp; fill</strong>. The hole is rebuilt from nearby texture (walls, sky, pavement work best). Undo with <kbd>Ctrl</kbd>+<kbd>Z</kbd>.</p>
+
+    <h2 id="cutout">5. Background and studio</h2>
+    <ul>
+      <li><strong>Transparent</strong> — subject on a checker. Export as PNG to keep the hole.</li>
+      <li><strong>Compose</strong> — color, gradient, blur, or a new background image. First use may download a cutout model (~26 MB portrait or ~115 MB any subject).</li>
+      <li><strong>Studio</strong> — subject on a cove with a shadow that follows the <strong>Light</strong> sun.</li>
+    </ul>
+
+    <h2 id="camera">6. Live camera</h2>
+    <p>Allow the camera when asked. <strong>+ / −</strong>, the mouse wheel, or pinch zoom the live view. Drag to pan when zoomed. <strong>Capture</strong> sends the frame into the editor. <strong>Record</strong> (or <kbd>R</kbd>) makes a clip; stop, then save the video or grab a frame.</p>
+
+    <h2 id="size">7. Resize and export</h2>
+    <ul>
+      <li><strong>Tools → Image → Image Size…</strong> — change the working pixels.</li>
+      <li><strong>Export…</strong> — pick a size, then PNG or JPEG. Transparent cutouts stay PNG.</li>
+      <li><strong>File → Print…</strong> — prints only the picture, not the dark chrome.</li>
+    </ul>
+
+    <h2 id="save">8. Save your work</h2>
+    <ul>
+      <li><strong>Save</strong> (<kbd>Ctrl</kbd>+<kbd>S</kbd>) — writes a <code>.buka.json</code> project file (and a recent copy in the browser).</li>
+      <li><strong>Save Project As…</strong> (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd>) — choose a new file.</li>
+      <li><strong>Open Project File…</strong> or <strong>Recent Projects…</strong> to continue later.</li>
+    </ul>
+    <p><strong>Sidecar on</strong> means “also write a small JSON of edit settings” when you export PNG + sidecar. It is not camera EXIF.</p>
+
+    <h2 id="shortcuts">Keyboard shortcuts</h2>
+    <ul>
+      <li><kbd>Ctrl</kbd>+<kbd>L</kbd> — Intent</li>
+      <li><kbd>Ctrl</kbd>+<kbd>Z</kbd> — Undo · <kbd>Ctrl</kbd>+<kbd>Y</kbd> — Redo</li>
+      <li><kbd>Ctrl</kbd>+<kbd>S</kbd> — Save project · <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd> — Save As</li>
+      <li><kbd>E</kbd> — Erase · <kbd>M</kbd> — Mask paint · <kbd>G</kbd> — Thought Graph · <kbd>C</kbd> — A/B</li>
+      <li><kbd>Alt</kbd> (hold) — Scenescape tilt</li>
+      <li>In camera: <kbd>R</kbd> record · <kbd>+</kbd>/<kbd>−</kbd> zoom · <kbd>0</kbd> reset zoom · <kbd>Esc</kbd> close</li>
+    </ul>
+
+    <h2 id="limits">What this software does not do</h2>
+    <ul>
+      <li>RAW files use the embedded preview, not a full demosaic develop.</li>
+      <li>Erase copies existing texture; it cannot invent a missing face or readable text.</li>
+      <li>Depth / “reconstruction” is an estimate for lighting looks, not a 3D scan.</li>
+      <li>Heal / soften items in the menu are blur mixes, not a Photoshop healing brush. Use <strong>Erase</strong> to remove objects.</li>
+    </ul>
+
+    <h2 id="trouble">If something goes wrong</h2>
+    <ul>
+      <li><strong>Camera denied</strong> — use the lock icon in the address bar and allow the camera. The address must start with <code>http://127.0.0.1</code>.</li>
+      <li><strong>Page will not load</strong> — look for the tray icon and Open, or run <strong>start.bat</strong> again.</li>
+      <li><strong>Two copies</strong> — a second launch reopens the same editor. Quit from the tray first if you need a clean restart.</li>
+      <li><strong>Cutout looks rough</strong> — wait for the model download, or pick Portrait vs Any subject in Compose.</li>
+    </ul>
+  </article>
+</body>
+</html>

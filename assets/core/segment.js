@@ -96,7 +96,7 @@ const LuminaSegment = (() => {
       entities.push({
         id: "sky",
         name: "Sky",
-        context: "Atmospheric HUD",
+        context: "Atmospheric",
         score: counts.sky / total,
         region: averageRegion(materials, depth, w, h, (m, d, v) => m === 0 || d < 0.32),
         controls: [
@@ -111,7 +111,7 @@ const LuminaSegment = (() => {
       entities.push({
         id: "mountains",
         name: "Mountains",
-        context: "Terrain HUD",
+        context: "Terrain",
         score: counts.mountains / total,
         region: averageRegion(materials, depth, w, h, (m, d, v) => v > 0.3 && v < 0.72 && d > 0.25 && d < 0.7 && m !== 0),
         controls: [
@@ -126,7 +126,7 @@ const LuminaSegment = (() => {
       entities.push({
         id: "foreground",
         name: "Foreground",
-        context: "Ground HUD",
+        context: "Ground",
         score: counts.foreground / total,
         region: averageRegion(materials, depth, w, h, (m, d, v) => v > 0.65 || m === 1 || m === 2),
         controls: [
@@ -142,7 +142,7 @@ const LuminaSegment = (() => {
       entities.push({
         id: "skin",
         name: "Skin",
-        context: "Portrait Context HUD",
+        context: "Portrait",
         score: Math.max(counts.skin / total, 0.3),
         region: {
           x0: face.x,
@@ -158,7 +158,7 @@ const LuminaSegment = (() => {
       entities.push({
         id: "eyes",
         name: "Eyes",
-        context: "Portrait Context HUD",
+        context: "Portrait",
         score: 0.4,
         region: {
           x0: face.x + face.w * 0.15,
@@ -175,7 +175,7 @@ const LuminaSegment = (() => {
       entities.push({
         id: "skin",
         name: "Skin",
-        context: "Portrait Context HUD",
+        context: "Portrait",
         score: counts.skin / total,
         region: averageRegion(materials, depth, w, h, (m) => m === 4),
         controls: [

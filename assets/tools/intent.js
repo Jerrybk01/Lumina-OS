@@ -96,6 +96,48 @@ const LuminaIntent = (() => {
       entityHint: "eyes",
     },
     {
+      test: /record(\s+a)?(\s+live)?\s*(video|clip)|start recording|live video/i,
+      isRecord: true,
+      toast: "Live camera — recording",
+    },
+    {
+      test: /add\s+(a\s+)?(text\s*)?box|text\s*box|add\s+text|caption|title\s+text/i,
+      isAddText: true,
+      toast: "Text box — type, drag, resize; text wraps and scales",
+    },
+    {
+      test: /image\s*size|resize\s+(the\s+)?(image|photo)|downsample|upsample|change\s+(the\s+)?(resolution|dimensions)/i,
+      isImageSize: true,
+      toast: "Image size — set width and height",
+    },
+    {
+      test: /studio\s*(drop|look|shot|backdrop)?|product\s*(shot|photo)|drop\s*shadow|contact\s*shadow|floor\s*reflection/i,
+      isStudioDrop: true,
+      toast: "Studio drop — shadow follows Light · drag the sun",
+    },
+    {
+      test: /transparent\s*(bg|background)?|cut\s*out|remove\s*(the\s*)?background|alpha\s*(png|background)/i,
+      isTransparentBg: true,
+      toast: "Transparent background — checker preview · Export PNG keeps alpha",
+    },
+    {
+      test: /erase subject|remove (the )?(person|people|subject|portrait)/i,
+      isErase: true,
+      eraseSubject: true,
+      toast: "Selecting the subject to erase",
+    },
+    {
+      test: /erase (the )?sky|remove (the )?sky/i,
+      isErase: true,
+      eraseEntity: "sky",
+      toast: "Sky selected — Erase & fill to remove it",
+    },
+    {
+      test: /erase|remove object|object removal|content.?aware|clone out|heal out/i,
+      isErase: true,
+      toast: "Mark what to remove, then Erase & fill",
+    },
+    {
       test: /blend\s+(sky|sunset|branches)|merge\s+branches/i,
       title: "Blend",
       type: "blend",

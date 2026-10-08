@@ -10,6 +10,7 @@ const LuminaGraph = (() => {
   let activeId = null;
   let onChange = () => {};
   let history = [];
+  let future = [];
 
   function init(nodesContainer, edgesSvg, changeCb) {
     nodesEl = nodesContainer;
@@ -18,21 +19,37 @@ const LuminaGraph = (() => {
   }
 
   function snapshot() {
+    future = [];
     history.push(JSON.stringify({ nodes, edges, activeId }));
     if (history.length > 60) history.shift();
   }
 
-  function undo() {
-    if (history.length < 2) return false;
-    history.pop();
-    const prev = JSON.parse(history[history.length - 1]);
-    nodes = prev.nodes;
-    edges = prev.edges;
-    activeId = prev.activeId;
+  function applySnap(snap) {
+    nodes = snap.nodes;
+    edges = snap.edges;
+    activeId = snap.activeId;
     selected.clear();
     render();
     emit(true);
+  }
+
+  function undo() {
+    if (history.length < 2) return false;
+    future.push(history.pop());
+    applySnap(JSON.parse(history[history.length - 1]));
     return true;
+  }
+
+  function redo() {
+    if (!future.length) return false;
+    const next = future.pop();
+    history.push(next);
+    applySnap(JSON.parse(next));
+    return true;
+  }
+
+  function canRedo() {
+    return future.length > 0;
   }
 
   function emit(fromUndo = false, doSnapshot = true) {
@@ -54,6 +71,7 @@ const LuminaGraph = (() => {
     edges = [];
     selected.clear();
     history = [];
+    future = [];
     const n = addNode(
       {
         id: "import",
@@ -85,6 +103,7 @@ const LuminaGraph = (() => {
       y: partial.y ?? 24 + nodes.length * 72,
       params: { ...(partial.params || {}) },
       meta: { ...(partial.meta || {}) },
+      opacity: partial.opacity ?? 1,
     };
     nodes.push(node);
     if (partial.parent) edges.push({ from: partial.parent, to: node.id });
@@ -116,21 +135,74 @@ const LuminaGraph = (() => {
     return nodes[nodes.length - 1] || null;
   }
 
+  function updateNodeOpacity(id, opacity) {
+    const n = nodes.find((x) => x.id === id);
+    if (!n) return;
+    n.opacity = Math.min(1, Math.max(0, opacity));
+    activeId = id;
+    render();
+    emit(false, false);
+  }
+
+  function getHistoryLength() {
+    return history.length;
+  }
+
+  function jumpToHistory(index) {
+    if (!history.length) return false;
+    const i = Math.min(history.length - 1, Math.max(0, index));
+    const snap = JSON.parse(history[i]);
+    nodes = snap.nodes;
+    edges = snap.edges;
+    activeId = snap.activeId;
+    selected.clear();
+    // Truncate forward history
+    history = history.slice(0, i + 1);
+    future = [];
+    render();
+    onChange(getState());
+    return true;
+  }
+
+  function historyLabel(index) {
+    if (!history[index]) return "—";
+    try {
+      const snap = JSON.parse(history[index]);
+      const n = snap.nodes.find((x) => x.id === snap.activeId);
+      return n ? n.title : "State";
+    } catch {
+      return "State";
+    }
+  }
+
   function getState() {
     return {
-      nodes: nodes.map((n) => ({ ...n, params: { ...n.params }, meta: { ...n.meta } })),
+      nodes: nodes.map((n) => ({
+        ...n,
+        params: { ...n.params },
+        meta: { ...n.meta },
+        opacity: n.opacity ?? 1,
+      })),
       edges: edges.map((e) => ({ ...e })),
       selected: [...selected],
       activeId,
+      historyIndex: Math.max(0, history.length - 1),
+      historyLength: history.length,
     };
   }
 
   function loadState(state) {
-    nodes = (state.nodes || []).map((n) => ({ ...n, params: { ...n.params }, meta: { ...n.meta } }));
+    nodes = (state.nodes || []).map((n) => ({
+      ...n,
+      params: { ...n.params },
+      meta: { ...n.meta },
+      opacity: n.opacity ?? 1,
+    }));
     edges = (state.edges || []).map((e) => ({ ...e }));
     activeId = state.activeId || nodes[nodes.length - 1]?.id || null;
     selected.clear();
     history = [];
+    future = [];
     snapshot();
     render();
     onChange(getState());
@@ -203,12 +275,19 @@ const LuminaGraph = (() => {
       if (n.id === activeId) el.classList.add("active-node");
       el.style.left = `${n.x}px`;
       el.style.top = `${n.y}px`;
-      el.innerHTML = `<div class="node-type">${esc(n.type)}</div><div class="node-title">${esc(n.title)}</div>`;
-      el.title = "Click select · Double-click set active leaf";
+      el.innerHTML = `<div class="node-type">${esc(n.type)} · ${Math.round((n.opacity ?? 1) * 100)}%</div><div class="node-title">${esc(n.title)}</div>
+        <input class="node-opacity" type="range" min="0" max="1" step="0.01" value="${n.opacity ?? 1}" title="Layer opacity" />`;
+      el.title = "Click select · Double-click set active leaf · Opacity slider = layer mix";
       el.addEventListener("click", (ev) => {
+        if (ev.target.classList.contains("node-opacity")) return;
         if (ev.detail === 2) setActive(n.id);
         else toggleSelect(n.id);
       });
+      el.querySelector(".node-opacity")?.addEventListener("input", (ev) => {
+        ev.stopPropagation();
+        updateNodeOpacity(n.id, Number(ev.target.value));
+      });
+      el.querySelector(".node-opacity")?.addEventListener("click", (ev) => ev.stopPropagation());
       nodesEl.appendChild(el);
     }
   }
@@ -233,6 +312,12 @@ const LuminaGraph = (() => {
     loadState,
     blendSelected,
     undo,
+    redo,
+    canRedo,
+    updateNodeOpacity,
+    getHistoryLength,
+    jumpToHistory,
+    historyLabel,
     render,
   };
 })();

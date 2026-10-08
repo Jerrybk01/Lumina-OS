@@ -9,7 +9,6 @@ const LuminaReconstruct = (() => {
     "canon eos r5": { name: "Canon EOS R5", noiseFloor: 0.015, highlightRollOff: 0.88, blackPoint: 0.01 },
     "sony a7r": { name: "Sony A7R", noiseFloor: 0.014, highlightRollOff: 0.89, blackPoint: 0.009 },
     fuji: { name: "Fujifilm", noiseFloor: 0.016, highlightRollOff: 0.86, blackPoint: 0.01 },
-    demo: { name: "Lumina Demo Sensor", noiseFloor: 0.01, highlightRollOff: 0.92, blackPoint: 0.006 },
   };
 
   function guessProfile(fileName = "") {
@@ -73,10 +72,21 @@ const LuminaReconstruct = (() => {
     });
   }
 
-  function imageToWorking(img, maxW = 960) {
-    const scale = Math.min(1, maxW / img.width);
-    const w = Math.max(2, Math.round(img.width * scale));
-    const h = Math.max(2, Math.round(img.height * scale));
+  /** Long-edge cap so a 40 MP file does not freeze the tab. 4096 keeps prints sharp. */
+  const DEFAULT_MAX_EDGE = 4096;
+
+  function imageToWorking(img, maxEdge = DEFAULT_MAX_EDGE, size = null) {
+    let w;
+    let h;
+    if (size?.w && size?.h) {
+      w = Math.max(2, Math.round(size.w));
+      h = Math.max(2, Math.round(size.h));
+    } else {
+      const long = Math.max(img.width, img.height);
+      const scale = Math.min(1, maxEdge / long);
+      w = Math.max(2, Math.round(img.width * scale));
+      h = Math.max(2, Math.round(img.height * scale));
+    }
     const c = document.createElement("canvas");
     c.width = w;
     c.height = h;
@@ -346,7 +356,7 @@ const LuminaReconstruct = (() => {
   }
 
   async function ingest(image, profile, opts = {}) {
-    const working = imageToWorking(image, opts.maxW || 960);
+    const working = imageToWorking(image, opts.maxW || opts.maxEdge || DEFAULT_MAX_EDGE, opts.size || null);
     const depth = estimateDepth(working.imageData, working.w, working.h);
     const materials = estimateMaterials(working.imageData, working.w, working.h, depth);
     const lightField = estimateLightField(working.imageData, working.w, working.h, depth);
@@ -366,6 +376,7 @@ const LuminaReconstruct = (() => {
   }
 
   return {
+    DEFAULT_MAX_EDGE,
     CAMERA_PROFILES,
     guessProfile,
     decodeFile,
