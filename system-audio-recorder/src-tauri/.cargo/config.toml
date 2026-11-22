@@ -1,0 +1,5 @@
+[build]
+target-dir = "target"
+
+[env]
+# Keep builds offline-first; no network crates beyond Cargo.lock resolution.
