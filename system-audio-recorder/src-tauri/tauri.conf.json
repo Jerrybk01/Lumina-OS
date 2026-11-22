@@ -40,8 +40,5 @@
     "category": "Music",
     "shortDescription": "Buka Quality Sound — system/loopback audio recorder",
     "longDescription": "Buka Quality Sound captures WASAPI/CoreAudio loopback audio with waveform metering, WAV/MP3 export, silence auto-split, and optional noise reduction."
-  },
-  "plugins": {
-    "global-shortcut": {}
   }
 }
